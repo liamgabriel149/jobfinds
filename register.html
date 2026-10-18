@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jobhunt · Register</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      max-width: 440px;
+      width: 100%;
+      padding: 48px 40px;
+      border-radius: 32px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.6s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .logo-section {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .logo-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 32px;
+      color: white;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+    
+    .card h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+    
+    .card .subtitle {
+      color: #6b7280;
+      font-size: 0.95rem;
+    }
+    
+    .input-group {
+      margin-bottom: 18px;
+    }
+    
+    .input-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+    
+    .input-group .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .input-group .input-wrapper:focus-within {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      background: white;
+    }
+    
+    .input-group .input-wrapper .input-icon {
+      padding: 0 0 0 16px;
+      color: #94a3b8;
+      font-size: 1.1rem;
+    }
+    
+    .input-group .input-wrapper:focus-within .input-icon {
+      color: #667eea;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      color: #1a1a2e;
+      outline: none;
+    }
+    
+    .input-group input::placeholder {
+      color: #94a3b8;
+    }
+    
+    .password-toggle {
+      padding: 0 16px 0 0;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: color 0.3s;
+    }
+    
+    .password-toggle:hover {
+      color: #667eea;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #f8fafc;
+      color: #1a1a2e;
+      border: 2px solid #e2e8f0;
+      padding: 14px 24px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+      margin-top: 8px;
+    }
+    
+    .btn-secondary:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .alert {
+      padding: 14px 18px;
+      border-radius: 14px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .alert-error {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      color: #991b1b;
+    }
+    
+    .alert-success {
+      background: #f0fdf4;
+      border-left: 4px solid #22c55e;
+      color: #166534;
+    }
+    
+    .alert-info {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      color: #1e3a8a;
+    }
+    
+    .alert i { font-size: 1.2rem; }
+    .hidden { display: none !important; }
+    
+    .verify-section {
+      margin-top: 24px;
+      border-top: 2px solid #e2e8f0;
+      padding-top: 24px;
+    }
+    
+    .verify-section h3 {
+      font-size: 1.1rem;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+    
+    .verify-section p {
+      color: #6b7280;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+    
+    .footer-links {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .footer-links .link {
+      color: #667eea;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    
+    .footer-links .link:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+    
+    .footer-links p {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+    
+    @media (max-width: 480px) {
+      .card { padding: 32px 24px; }
+      .card h2 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-section">
+    <div class="logo-icon">
+      <i class="fas fa-user-plus"></i>
+    </div>
+    <h2>Create Account</h2>
+    <p class="subtitle">Join the Jobhunt community</p>
+  </div>
+  
+  <div id="regError" class="alert alert-error hidden">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="errorMessage">Error message</span>
+  </div>
+  
+  <div id="regSuccess" class="alert alert-success hidden">
+    <i class="fas fa-check-circle"></i>
+    <span id="successMessage">Success message</span>
+  </div>
+  
+  <!-- Registration Form -->
+  <div id="registerForm">
+    <div class="input-group">
+      <label for="regUser"><i class="fas fa-user" style="margin-right: 6px;"></i> Username</label>
+      <div class="input-wrapper">
+        <span class="input-icon"><i class="fas fa-user-circle"></i></span>
+        <input id="regUser" type="text" placeholder="Choose a unique username" />
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label for="regEmail"><i class="fas fa-envelope" style="margin-right: 6px;"></i> Email Address</label>
+      <div class="input-wrapper">
+        <span class="input-icon"><i class="fas fa-envelope"></i></span>
+        <input id="regEmail" type="email" placeholder="you@example.com" />
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label for="regPass"><i class="fas fa-lock" style="margin-right: 6px;"></i> Password</label>
+      <div class="input-wrapper">
+        <span class="input-icon"><i class="fas fa-key"></i></span>
+        <input id="regPass" type="password" placeholder="Minimum 6 characters" />
+        <button class="password-toggle" type="button" onclick="togglePassword('regPass', this)">
+          <i class="fas fa-eye"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="input-group">
+      <label for="regPass2"><i class="fas fa-check-circle" style="margin-right: 6px;"></i> Confirm Password</label>
+      <div class="input-wrapper">
+        <span class="input-icon"><i class="fas fa-check"></i></span>
+        <input id="regPass2" type="password" placeholder="Confirm your password" />
+        <button class="password-toggle" type="button" onclick="togglePassword('regPass2', this)">
+          <i class="fas fa-eye"></i>
+        </button>
+      </div>
+    </div>
+    
+    <button class="btn-primary" id="registerBtn">
+      <i class="fas fa-paper-plane" style="margin-right: 8px;"></i> Send Verification Code
+    </button>
+  </div>
+  
+  <!-- Verification Section -->
+  <div id="verifySection" class="verify-section hidden">
+    <h3><i class="fas fa-shield-alt" style="color: #667eea; margin-right: 8px;"></i> Verify Your Account</h3>
+    <p>Enter the 6-digit code sent to your email</p>
+    
+    <div class="input-group">
+      <label for="verifyCode">Verification Code</label>
+      <div class="input-wrapper">
+        <span class="input-icon"><i class="fas fa-qrcode"></i></span>
+        <input id="verifyCode" type="text" placeholder="Enter 6-digit code" maxlength="6" />
+      </div>
+    </div>
+    
+    <button class="btn-primary" id="verifyBtn">
+      <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Create Account
+    </button>
+    <button class="btn-secondary" id="resendCode">
+      <i class="fas fa-redo" style="margin-right: 8px;"></i> Resend Code
+    </button>
+  </div>
+  
+  <div class="footer-links">
+    <p>Already have an account? <span class="link" id="backToLogin">Sign in here</span></p>
+  </div>
+</div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBBZ790BhNj8pBSXKlwii_zsQPLXfrxP18",
+    authDomain: "viralapp-efe85.firebaseapp.com",
+    databaseURL: "https://viralapp-efe85-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "viralapp-efe85",
+    storageBucket: "viralapp-efe85.firebasestorage.app",
+    messagingSenderId: "460656575488",
+    appId: "1:460656575488:web:19d7d0c28e9c86651444e5"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  let tempUserData = null;
+  let verificationCode = '';
+
+  function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+  window.togglePassword = togglePassword;
+
+  const regUser = document.getElementById('regUser');
+  const regEmail = document.getElementById('regEmail');
+  const regPass = document.getElementById('regPass');
+  const regPass2 = document.getElementById('regPass2');
+  const registerBtn = document.getElementById('registerBtn');
+  const regError = document.getElementById('regError');
+  const errorMessage = document.getElementById('errorMessage');
+  const regSuccess = document.getElementById('regSuccess');
+  const successMessage = document.getElementById('successMessage');
+  const verifySection = document.getElementById('verifySection');
+  const verifyCode = document.getElementById('verifyCode');
+  const verifyBtn = document.getElementById('verifyBtn');
+  const resendCode = document.getElementById('resendCode');
+  const registerForm = document.getElementById('registerForm');
+
+  registerBtn.addEventListener('click', async () => {
+    const username = regUser.value.trim();
+    const email = regEmail.value.trim();
+    const password = regPass.value;
+    const password2 = regPass2.value;
+    
+    regError.classList.add('hidden');
+    regSuccess.classList.add('hidden');
+
+    if (!username || !email || !password || !password2) {
+      errorMessage.textContent = 'All fields are required.';
+      regError.classList.remove('hidden');
+      return;
+    }
+    
+    if (password !== password2) {
+      errorMessage.textContent = 'Passwords do not match.';
+      regError.classList.remove('hidden');
+      return;
+    }
+    
+    if (password.length < 6) {
+      errorMessage.textContent = 'Password must be at least 6 characters.';
+      regError.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const snapshot = await db.ref('users').orderByChild('username').equalTo(username).once('value');
+      if (snapshot.exists()) {
+        errorMessage.textContent = 'Username is already taken.';
+        regError.classList.remove('hidden');
+        return;
+      }
+    } catch (err) {
+      errorMessage.textContent = 'Error checking username. Please try again.';
+      regError.classList.remove('hidden');
+      return;
+    }
+
+    tempUserData = { username, email, password };
+    verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    verifySection.classList.remove('hidden');
+    registerForm.style.display = 'none';
+    registerBtn.disabled = true;
+    
+    successMessage.textContent = `Verification code sent to ${email}`;
+    regSuccess.classList.remove('hidden');
+    
+    alert(`📧 Verification code sent to ${email}\n\nYour Verification code: ${verificationCode}`);
+  });
+
+  verifyBtn.addEventListener('click', async () => {
+    const code = verifyCode.value.trim();
+    regError.classList.add('hidden');
+    regSuccess.classList.add('hidden');
+
+    if (!code) {
+      errorMessage.textContent = 'Please enter the verification code.';
+      regError.classList.remove('hidden');
+      return;
+    }
+
+    if (code !== verificationCode) {
+      errorMessage.textContent = 'Invalid verification code. Please try again.';
+      regError.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const { username, email, password } = tempUserData;
+      const userCred = await auth.createUserWithEmailAndPassword(email, password);
+      const uid = userCred.user.uid;
+      
+      await db.ref('users/' + uid).set({
+        username,
+        email,
+        role: 'user',
+        createdAt: Date.now()
+      });
+      
+      successMessage.textContent = '🎉 Account created successfully! Redirecting...';
+      regSuccess.classList.remove('hidden');
+      
+      setTimeout(() => {
+        window.location.href = 'user.html';
+      }, 1500);
+      
+    } catch (err) {
+      errorMessage.textContent = err.message || 'Registration failed. Please try again.';
+      regError.classList.remove('hidden');
+    }
+  });
+
+  resendCode.addEventListener('click', () => {
+    if (!tempUserData) {
+      errorMessage.textContent = 'Please start the registration process again.';
+      regError.classList.remove('hidden');
+      return;
+    }
+    
+    verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    alert(`📧 New verification code sent to ${tempUserData.email}\n\nDemo code: ${verificationCode}`);
+    
+    successMessage.textContent = `New code sent to ${tempUserData.email}`;
+    regSuccess.classList.remove('hidden');
+  });
+
+  document.getElementById('backToLogin').addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      try {
+        const snap = await db.ref('users/' + user.uid).once('value');
+        const data = snap.val();
+        if (data?.role === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'user.html';
+        }
+      } catch {
+        window.location.href = 'user.html';
+      }
+    }
+  });
+</script>
+</body>
+</html>

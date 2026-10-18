@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jobhunt · Login</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    body::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.05) 0%, transparent 50%);
+      animation: shimmer 20s infinite linear;
+    }
+    
+    @keyframes shimmer {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      max-width: 440px;
+      width: 100%;
+      padding: 48px 40px;
+      border-radius: 32px;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      z-index: 1;
+      animation: slideUp 0.6s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .logo-section {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .logo-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 32px;
+      color: white;
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    }
+    
+    .card h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    
+    .card .subtitle {
+      color: #6b7280;
+      font-size: 0.95rem;
+      font-weight: 400;
+    }
+    
+    .admin-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 4px 14px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .input-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+    
+    .input-group .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .input-group .input-wrapper:focus-within {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      background: white;
+    }
+    
+    .input-group .input-wrapper .input-icon {
+      padding: 0 0 0 16px;
+      color: #94a3b8;
+      font-size: 1.1rem;
+      transition: color 0.3s;
+    }
+    
+    .input-group .input-wrapper:focus-within .input-icon {
+      color: #667eea;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      background: transparent;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      color: #1a1a2e;
+      outline: none;
+    }
+    
+    .input-group input::placeholder {
+      color: #94a3b8;
+    }
+    
+    .password-toggle {
+      padding: 0 16px 0 0;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: color 0.3s;
+      display: flex;
+      align-items: center;
+    }
+    
+    .password-toggle:hover {
+      color: #667eea;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .btn-primary:hover::after {
+      opacity: 1;
+    }
+    
+    .alert {
+      padding: 14px 18px;
+      border-radius: 14px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .alert-error {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      color: #991b1b;
+    }
+    
+    .alert-success {
+      background: #f0fdf4;
+      border-left: 4px solid #22c55e;
+      color: #166534;
+    }
+    
+    .alert-info {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      color: #1e3a8a;
+    }
+    
+    .alert i {
+      font-size: 1.2rem;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .admin-credentials {
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin: 12px 0 0;
+      border: 1px dashed #94a3b8;
+    }
+    
+    .admin-credentials .cred-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 0.85rem;
+    }
+    
+    .admin-credentials .cred-row strong {
+      color: #1a1a2e;
+    }
+    
+    .admin-credentials code {
+      background: #e2e8f0;
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #1a1a2e;
+      font-weight: 600;
+    }
+    
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      gap: 16px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    
+    .divider span {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    
+    .footer-links {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .footer-links .link {
+      color: #667eea;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 0.3s;
+    }
+    
+    .footer-links .link:hover {
+      color: #764ba2;
+      text-decoration: underline;
+    }
+    
+    .footer-links p {
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 480px) {
+      .card {
+        padding: 32px 24px;
+      }
+      
+      .card h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-section">
+    <div class="logo-icon">
+      <i class="fas fa-bolt"></i>
+    </div>
+    <h2>Jobhunt</h2>
+    <p class="subtitle">Sign in to your Jobhunt account</p>
+  </div>
+  
+  <div id="adminCreatedInfo" class="alert alert-info hidden">
+    <i class="fas fa-check-circle"></i>
+    <div>
+      <strong>Admin account created!</strong>
+      <div class="admin-credentials">
+        <div class="cred-row">
+          <strong>Username</strong>
+          <code>admin</code>
+        </div>
+        <div class="cred-row">
+          <strong>Password</strong>
+          <code>Li@mG@briel2025</code>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="loginError" class="alert alert-error hidden">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="errorMessage">Error message</span>
+  </div>
+  
+  <div class="input-group">
+    <label for="loginUser"><i class="fas fa-user" style="margin-right: 6px;"></i> Username</label>
+    <div class="input-wrapper">
+      <span class="input-icon"><i class="fas fa-user-circle"></i></span>
+      <input id="loginUser" type="text" placeholder="Enter your username" />
+    </div>
+  </div>
+  
+  <div class="input-group">
+    <label for="loginPass"><i class="fas fa-lock" style="margin-right: 6px;"></i> Password</label>
+    <div class="input-wrapper">
+      <span class="input-icon"><i class="fas fa-key"></i></span>
+      <input id="loginPass" type="password" placeholder="Enter your password" />
+      <button class="password-toggle" type="button" onclick="togglePassword('loginPass', this)">
+        <i class="fas fa-eye"></i>
+      </button>
+    </div>
+  </div>
+  
+  <button class="btn-primary" id="loginBtn">
+    <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Sign In
+  </button>
+  
+  <div class="divider">
+    <span>or</span>
+  </div>
+  
+  <div class="footer-links">
+    <p>Don't have an account? <span class="link" id="goToRegister">Create one here</span></p>
+  </div>
+</div>
+
+<script>
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyBBZ790BhNj8pBSXKlwii_zsQPLXfrxP18",
+    authDomain: "viralapp-efe85.firebaseapp.com",
+    databaseURL: "https://viralapp-efe85-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "viralapp-efe85",
+    storageBucket: "viralapp-efe85.firebasestorage.app",
+    messagingSenderId: "460656575488",
+    appId: "1:460656575488:web:19d7d0c28e9c86651444e5"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  // Toggle password visibility
+  function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+  window.togglePassword = togglePassword;
+
+  // DOM Elements
+  const loginUser = document.getElementById('loginUser');
+  const loginPass = document.getElementById('loginPass');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginError = document.getElementById('loginError');
+  const errorMessage = document.getElementById('errorMessage');
+  const adminCreatedInfo = document.getElementById('adminCreatedInfo');
+
+  // Function to create admin account automatically
+  async function createAdminAccount() {
+    try {
+      const snapshot = await db.ref('users').orderByChild('role').equalTo('admin').once('value');
+      
+      if (snapshot.exists()) {
+        adminCreatedInfo.classList.add('hidden');
+        return;
+      }
+
+      const adminEmail = 'admin@viralapp.com';
+      const adminPass = 'Li@mG@briel2025';
+      const adminUsername = 'admin';
+
+      try {
+        const userCred = await auth.createUserWithEmailAndPassword(adminEmail, adminPass);
+        const uid = userCred.user.uid;
+        
+        await db.ref('users/' + uid).set({
+          username: adminUsername,
+          email: adminEmail,
+          role: 'admin',
+          createdAt: Date.now()
+        });
+        
+        adminCreatedInfo.classList.remove('hidden');
+        await auth.signOut();
+        
+      } catch (err) {
+        if (err.code === 'auth/email-already-in-use') {
+          try {
+            const snap = await db.ref('users').orderByChild('email').equalTo(adminEmail).once('value');
+            if (snap.exists()) {
+              const uid = Object.keys(snap.val())[0];
+              await db.ref('users/' + uid).update({ 
+                role: 'admin',
+                username: adminUsername
+              });
+              adminCreatedInfo.classList.remove('hidden');
+            }
+          } catch (updateErr) {
+            console.warn('Could not promote user to admin:', updateErr);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Admin seed warning:', err.message);
+    }
+  }
+
+  // Login Function
+  async function handleLogin() {
+    const username = loginUser.value.trim();
+    const password = loginPass.value;
+    
+    loginError.classList.add('hidden');
+
+    if (!username || !password) {
+      errorMessage.textContent = 'Please fill in all fields.';
+      loginError.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const snapshot = await db.ref('users').orderByChild('username').equalTo(username).once('value');
+      const data = snapshot.val();
+      
+      if (!data) {
+        errorMessage.textContent = 'Username not found.';
+        loginError.classList.remove('hidden');
+        return;
+      }
+
+      const uid = Object.keys(data)[0];
+      const userData = data[uid];
+      
+      if (!userData.email) {
+        errorMessage.textContent = 'Account error. Please contact support.';
+        loginError.classList.remove('hidden');
+        return;
+      }
+
+      await auth.signInWithEmailAndPassword(userData.email, password);
+      
+      if (userData.role === 'admin') {
+        window.location.href = 'admin.html';
+      } else {
+        window.location.href = 'user.html';
+      }
+      
+    } catch (err) {
+      errorMessage.textContent = err.message || 'Login failed. Please try again.';
+      loginError.classList.remove('hidden');
+    }
+  }
+
+  // Event Listeners
+  loginBtn.addEventListener('click', handleLogin);
+  
+  loginPass.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+  
+  loginUser.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  document.getElementById('goToRegister').addEventListener('click', () => {
+    window.location.href = 'register.html';
+  });
+
+  // Auth state listener
+  auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      try {
+        const snap = await db.ref('users/' + user.uid).once('value');
+        const data = snap.val();
+        if (data?.role === 'admin') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'user.html';
+        }
+      } catch {
+        window.location.href = 'user.html';
+      }
+    }
+  });
+
+  // Run admin creation
+  setTimeout(() => {
+    createAdminAccount();
+  }, 500);
+</script>
+</body>
+</html>

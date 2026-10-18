@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ViralApp · Admin Panel</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ... all your existing CSS unchanged ... */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',sans-serif; background:#f1f5f9; min-height:100vh; padding:24px; }
+    .container { max-width:1200px; margin:0 auto; }
+    .card { background:white; padding:40px; border-radius:32px; box-shadow:0 20px 60px rgba(0,0,0,0.08); margin-bottom:24px; animation:slideUp .6s ease-out; }
+    @keyframes slideUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+    .admin-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:32px; padding-bottom:24px; border-bottom:2px solid #f1f5f9; }
+    .admin-header .left { display:flex; align-items:center; gap:16px; }
+    .admin-header .left .icon { width:56px; height:56px; background:linear-gradient(135deg,#667eea,#764ba2); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:24px; color:white; }
+    .admin-header .left h1 { font-size:28px; font-weight:700; color:#1a1a2e; }
+    .admin-header .left p { color:#6b7280; font-size:.9rem; }
+    .admin-header .right { display:flex; gap:12px; flex-wrap:wrap; }
+    .badge { display:inline-block; padding:4px 16px; border-radius:40px; font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+    .badge-admin { background:#fce4ec; color:#b71c1c; }
+    .badge-pending { background:#fef3c7; color:#92400e; }
+    .badge-approved { background:#d1fae5; color:#065f46; }
+    .badge-rejected { background:#fee2e2; color:#991b1b; }
+    .badge-user { background:#dbeafe; color:#1e40af; }
+    .btn { padding:10px 20px; border:none; border-radius:12px; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .3s; font-family:'Inter',sans-serif; display:inline-flex; align-items:center; gap:8px; }
+    .btn-primary { background:linear-gradient(135deg,#667eea,#764ba2); color:white; box-shadow:0 4px 12px rgba(102,126,234,.3); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(102,126,234,.4); }
+    .btn-outline { background:transparent; color:#1a1a2e; border:2px solid #e2e8f0; }
+    .btn-outline:hover { background:#f8fafc; }
+    .btn-danger { background:#ef4444; color:white; }
+    .btn-danger:hover { background:#dc2626; transform:translateY(-2px); }
+    .btn-success { background:#22c55e; color:white; }
+    .btn-success:hover { background:#16a34a; transform:translateY(-2px); }
+    .btn-warning { background:#f59e0b; color:white; }
+    .btn-warning:hover { background:#d97706; transform:translateY(-2px); }
+    .btn-sm { padding:6px 14px; font-size:.8rem; }
+    .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:32px; }
+    .stat-card { background:#f8fafc; padding:20px; border-radius:16px; border:1px solid #e2e8f0; text-align:center; transition:all .3s; }
+    .stat-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.05); }
+    .stat-card .number { font-size:32px; font-weight:700; color:#1a1a2e; }
+    .stat-card .label { font-size:.8rem; color:#6b7280; margin-top:4px; }
+    .stat-card .stat-icon { font-size:24px; color:#667eea; margin-bottom:8px; }
+    .tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:2px solid #f1f5f9; padding-bottom:12px; flex-wrap:wrap; }
+    .tab-btn { padding:10px 24px; border:none; background:transparent; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .3s; border-radius:12px; color:#6b7280; font-family:'Inter',sans-serif; }
+    .tab-btn:hover { background:#f8fafc; color:#1a1a2e; }
+    .tab-btn.active { background:#667eea; color:white; box-shadow:0 4px 12px rgba(102,126,234,.3); }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .table-wrapper { overflow-x:auto; }
+    .admin-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+    .admin-table th { text-align:left; padding:14px 12px 14px 0; color:#6b7280; font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #f1f5f9; }
+    .admin-table td { padding:14px 12px 14px 0; border-bottom:1px solid #f1f5f9; color:#1a1a2e; }
+    .admin-table tr:last-child td { border-bottom:none; }
+    .admin-table tr:hover td { background:#f8fafc; }
+    .user-badge { display:inline-block; padding:2px 12px; border-radius:40px; font-size:.7rem; font-weight:600; text-transform:capitalize; }
+    .user-badge-admin { background:#fce4ec; color:#b71c1c; }
+    .user-badge-user { background:#dbeafe; color:#1e40af; }
+    .delete-btn { background:#fee2e2; color:#dc2626; border:none; padding:6px 14px; border-radius:8px; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .3s; font-family:'Inter',sans-serif; }
+    .delete-btn:hover { background:#fecaca; transform:scale(1.05); }
+    .promote-btn { background:#dbeafe; color:#1e40af; border:none; padding:6px 14px; border-radius:8px; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .3s; font-family:'Inter',sans-serif; }
+    .promote-btn:hover { background:#bfdbfe; transform:scale(1.05); }
+    .reset-btn { background:#fef3c7; color:#92400e; border:none; padding:6px 14px; border-radius:8px; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .3s; font-family:'Inter',sans-serif; }
+    .reset-btn:hover { background:#fde68a; transform:scale(1.05); }
+    .self-label { font-size:.7rem; color:#94a3b8; background:#f1f5f9; padding:4px 12px; border-radius:6px; }
+    .view-btn { background:#dbeafe; color:#1e40af; border:none; padding:6px 14px; border-radius:8px; font-size:.75rem; font-weight:600; cursor:pointer; transition:all .3s; font-family:'Inter',sans-serif; }
+    .view-btn:hover { background:#bfdbfe; transform:scale(1.05); }
+    .alert { padding:14px 18px; border-radius:14px; margin:16px 0; font-size:.9rem; display:flex; align-items:center; gap:10px; animation:slideDown .3s ease-out; }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+    .alert-success { background:#f0fdf4; border-left:4px solid #22c55e; color:#166534; }
+    .alert-error { background:#fef2f2; border-left:4px solid #ef4444; color:#991b1b; }
+    .alert-info { background:#eff6ff; border-left:4px solid #3b82f6; color:#1e3a8a; }
+    .alert i { font-size:1.2rem; }
+    .hidden { display:none !important; }
+    .empty-state { text-align:center; padding:40px 20px; color:#6b7280; }
+    .empty-state i { font-size:48px; color:#d1d5db; margin-bottom:16px; }
+    .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); backdrop-filter:blur(8px); z-index:1000; align-items:center; justify-content:center; padding:20px; animation:fadeIn .3s; }
+    .modal-overlay.active { display:flex; }
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    .modal { background:white; max-width:700px; width:100%; max-height:90vh; overflow-y:auto; padding:40px; border-radius:28px; box-shadow:0 20px 60px rgba(0,0,0,.3); animation:slideUp .4s; position:relative; }
+    .modal-close { position:absolute; top:20px; right:20px; background:#f1f5f9; border:none; width:40px; height:40px; border-radius:50%; font-size:20px; cursor:pointer; transition:all .3s; display:flex; align-items:center; justify-content:center; color:#1a1a2e; }
+    .modal-close:hover { background:#e2e8f0; transform:rotate(90deg); }
+    .modal h2 { font-size:24px; font-weight:700; color:#1a1a2e; margin-bottom:8px; }
+    .modal .subtitle { color:#6b7280; font-size:.95rem; margin-bottom:24px; }
+    .modal .detail-section { margin-bottom:20px; }
+    .modal .detail-section .section-title { font-weight:600; color:#667eea; font-size:.95rem; margin-bottom:8px; border-bottom:1px solid #f1f5f9; padding-bottom:6px; }
+    .modal .detail-row { display:flex; justify-content:space-between; padding:6px 0; font-size:.9rem; border-bottom:1px solid #f8fafc; }
+    .modal .detail-row .label { color:#6b7280; }
+    .modal .detail-row .value { font-weight:500; color:#1a1a2e; }
+    .modal .detail-row .value a { color:#667eea; text-decoration:none; }
+    .modal .detail-row .value a:hover { text-decoration:underline; }
+    .modal .status-actions { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
+    .modal .status-actions .btn { flex:1; justify-content:center; min-width:100px; }
+    .input-group { margin-bottom:14px; }
+    .input-group label { display:block; font-weight:600; font-size:.8rem; color:#1a1a2e; margin-bottom:6px; }
+    .input-group input { width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:.95rem; font-family:'Inter',sans-serif; outline:none; transition:all .3s; }
+    .input-group input:focus { border-color:#667eea; box-shadow:0 0 0 4px rgba(102,126,234,.1); }
+    .create-admin-grid { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:12px; align-items:end; }
+    @media(max-width:900px){ .create-admin-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:600px){ .create-admin-grid { grid-template-columns:1fr; } }
+    @media(max-width:768px){ .card{padding:24px;} .admin-header .left h1{font-size:22px;} .stats-grid{grid-template-columns:1fr 1fr;} .admin-header .right{width:100%;} .admin-header .right .btn{flex:1;justify-content:center;} .modal{padding:24px;margin:10px;} }
+    @media(max-width:480px){ .stats-grid{grid-template-columns:1fr;} .tabs{flex-direction:column;} .tab-btn{text-align:center;} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="admin-header">
+        <div class="left">
+          <div class="icon"><i class="fas fa-shield-alt"></i></div>
+          <div>
+            <h1>Admin Panel</h1>
+            <p><i class="fas fa-users" style="margin-right:6px;"></i> Manage users and applications</p>
+          </div>
+        </div>
+        <div class="right">
+          <span class="badge badge-admin"><i class="fas fa-crown"></i> Admin</span>
+          <button class="btn btn-outline" id="goToUserDashboard"><i class="fas fa-user"></i> My Dashboard</button>
+          <button class="btn btn-danger" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Log Out</button>
+        </div>
+      </div>
+
+      <div id="adminMessage" class="alert alert-success hidden">
+        <i class="fas fa-check-circle"></i>
+        <span id="adminMessageText">Message</span>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="number" id="totalUsers">0</div><div class="label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-file-alt"></i></div><div class="number" id="totalApplications">0</div><div class="label">Total Applications</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-clock"></i></div><div class="number" id="pendingApplications">0</div><div class="label">Pending Review</div></div>
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="number" id="approvedApplications">0</div><div class="label">Approved</div></div>
+      </div>
+
+      <!-- Create Admin Card -->
+      <div style="background:#f8fafc; border:2px dashed #cbd5e1; border-radius:20px; padding:24px; margin-bottom:32px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <div style="width:44px; height:44px; background:linear-gradient(135deg,#8b5cf6,#d946ef); border-radius:14px; display:flex; align-items:center; justify-content:center; color:white; font-size:20px;"><i class="fas fa-crown"></i></div>
+          <div>
+            <h3 style="font-size:18px; font-weight:700; color:#1a1a2e;">Create New Admin</h3>
+            <p style="font-size:.85rem; color:#6b7280;">Provision a new admin account with full panel access</p>
+          </div>
+        </div>
+
+        <div id="createAdminAlert" class="alert alert-error hidden" style="margin-bottom:16px;">
+          <i class="fas fa-circle-exclamation"></i>
+          <span id="createAdminAlertMsg"></span>
+        </div>
+        <div id="createAdminSuccess" class="alert alert-success hidden" style="margin-bottom:16px;">
+          <i class="fas fa-check-circle"></i>
+          <span id="createAdminSuccessMsg"></span>
+        </div>
+
+        <div class="create-admin-grid">
+          <div class="input-group" style="margin-bottom:0;">
+            <label><i class="fas fa-user" style="margin-right:4px;"></i> Username</label>
+            <input type="text" id="newAdminUsername" placeholder="admin2" />
+          </div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label><i class="fas fa-envelope" style="margin-right:4px;"></i> Email</label>
+            <input type="email" id="newAdminEmail" placeholder="admin2@viralapp.com" />
+          </div>
+          <div class="input-group" style="margin-bottom:0;">
+            <label><i class="fas fa-key" style="margin-right:4px;"></i> Password</label>
+            <input type="text" id="newAdminPassword" placeholder="Strong password (min 6)" />
+          </div>
+          <button class="btn btn-primary" id="createAdminBtn" style="height:46px;"><i class="fas fa-plus"></i> Create</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="users"><i class="fas fa-users"></i> Users</button>
+        <button class="tab-btn" data-tab="applications"><i class="fas fa-file-alt"></i> Applications <span id="appBadge" style="background:#667eea; color:white; padding:2px 8px; border-radius:40px; font-size:.7rem; margin-left:4px;">0</span></button>
+      </div>
+
+      <!-- Users Tab -->
+      <div class="tab-content active" id="tab-users">
+        <div class="alert alert-info" style="margin-bottom:16px;">
+          <i class="fas fa-info-circle"></i>
+          <span><strong>Note:</strong> Passwords are one-way hashed by Firebase and cannot be viewed by anyone. Use <strong>Reset Password</strong> to send the user a secure reset link, or <strong>Promote</strong> to make them admin.</span>
+        </div>
+        <div class="table-wrapper" id="userListContainer">
+          <div style="text-align:center; padding:40px; color:#94a3b8;"><i class="fas fa-spinner fa-spin" style="font-size:32px;"></i><p style="margin-top:12px;">Loading users...</p></div>
+        </div>
+      </div>
+
+      <!-- Applications Tab -->
+      <div class="tab-content" id="tab-applications">
+        <div class="table-wrapper" id="applicationListContainer">
+          <div style="text-align:center; padding:40px; color:#94a3b8;"><i class="fas fa-spinner fa-spin" style="font-size:32px;"></i><p style="margin-top:12px;">Loading applications...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Detail Modal -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <button class="modal-close" id="closeDetailModal"><i class="fas fa-times"></i></button>
+      <h2><i class="fas fa-file-alt" style="color:#667eea;"></i> Application Details</h2>
+      <p class="subtitle" id="detailApplicant">Applicant: Loading...</p>
+      <div id="detailContent">
+        <div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;"></i><p>Loading details...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBBZ790BhNj8pBSXKlwii_zsQPLXfrxP18",
+      authDomain: "viralapp-efe85.firebaseapp.com",
+      databaseURL: "https://viralapp-efe85-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "viralapp-efe85",
+      storageBucket: "viralapp-efe85.firebasestorage.app",
+      messagingSenderId: "460656575488",
+      appId: "1:460656575488:web:19d7d0c28e9c86651444e5"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const userListContainer = document.getElementById('userListContainer');
+    const applicationListContainer = document.getElementById('applicationListContainer');
+    const adminMessage = document.getElementById('adminMessage');
+    const adminMessageText = document.getElementById('adminMessageText');
+    const totalUsers = document.getElementById('totalUsers');
+    const totalApplications = document.getElementById('totalApplications');
+    const pendingApplications = document.getElementById('pendingApplications');
+    const approvedApplications = document.getElementById('approvedApplications');
+    const appBadge = document.getElementById('appBadge');
+    const detailModal = document.getElementById('detailModal');
+    const closeDetailModal = document.getElementById('closeDetailModal');
+    const detailContent = document.getElementById('detailContent');
+    const detailApplicant = document.getElementById('detailApplicant');
+    const newAdminUsername = document.getElementById('newAdminUsername');
+    const newAdminEmail = document.getElementById('newAdminEmail');
+    const newAdminPassword = document.getElementById('newAdminPassword');
+    const createAdminBtn = document.getElementById('createAdminBtn');
+    const createAdminAlert = document.getElementById('createAdminAlert');
+    const createAdminAlertMsg = document.getElementById('createAdminAlertMsg');
+    const createAdminSuccess = document.getElementById('createAdminSuccess');
+    const createAdminSuccessMsg = document.getElementById('createAdminSuccessMsg');
+
+    function showMessage(text, type='success') {
+      adminMessage.className = `alert alert-${type}`;
+      adminMessageText.textContent = text;
+      adminMessage.classList.remove('hidden');
+      setTimeout(() => adminMessage.classList.add('hidden'), 4000);
+    }
+
+    // ---------- Load Users (with Promote + Reset Password buttons) ----------
+    async function loadUsers() {
+      try {
+        const snapshot = await db.ref('users').once('value');
+        const users = snapshot.val();
+
+        if (!users) {
+          userListContainer.innerHTML = `<div class="empty-state"><i class="fas fa-user-slash"></i><p>No users found in the system.</p></div>`;
+          totalUsers.textContent = '0';
+          return;
+        }
+
+        const userArray = Object.entries(users);
+        let html = `<table class="admin-table">
+          <thead><tr>
+            <th><i class="fas fa-user"></i> Username</th>
+            <th><i class="fas fa-envelope"></i> Email</th>
+            <th><i class="fas fa-tag"></i> Role</th>
+            <th><i class="fas fa-calendar"></i> Joined</th>
+            <th><i class="fas fa-cog"></i> Actions</th>
+          </tr></thead><tbody>`;
+
+        for (const [uid, data] of userArray) {
+          const isSelf = (uid === auth.currentUser?.uid);
+          const role = data.role || 'user';
+          const createdDate = data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
+
+          let actionButtons = '';
+          if (isSelf) {
+            actionButtons = `<span class="self-label"><i class="fas fa-user-check"></i> Self</span>`;
+          } else {
+            actionButtons = `
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${role !== 'admin' ? `<button class="promote-btn" data-uid="${uid}" data-username="${data.username || 'user'}"><i class="fas fa-arrow-up"></i> Promote</button>` : ''}
+                ${data.email ? `<button class="reset-btn" data-email="${data.email}" data-username="${data.username || 'user'}"><i class="fas fa-key"></i> Reset Password</button>` : ''}
+                <button class="delete-btn" data-uid="${uid}" data-username="${data.username || 'user'}"><i class="fas fa-trash-alt"></i> Delete</button>
+              </div>
+            `;
+          }
+
+          html += `<tr>
+            <td><strong>${data.username || '—'}</strong></td>
+            <td>${data.email || '—'}</td>
+            <td><span class="user-badge user-badge-${role}">${role}</span></td>
+            <td>${createdDate}</td>
+            <td>${actionButtons}</td>
+          </tr>`;
+        }
+        html += `</tbody></table>`;
+        userListContainer.innerHTML = html;
+        totalUsers.textContent = userArray.length;
+
+        // Delete handlers
+        userListContainer.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const uid = btn.dataset.uid;
+            const username = btn.dataset.username;
+            if (!confirm(`⚠️ Delete user "${username}"?\n\nThis removes their database record and applications. Note: their Firebase Auth login must be removed separately from the Firebase Console.`)) return;
+            try {
+              const appSnapshot = await db.ref('applications').orderByChild('userId').equalTo(uid).once('value');
+              if (appSnapshot.exists()) {
+                for (const appKey of Object.keys(appSnapshot.val())) {
+                  await db.ref('applications/' + appKey).remove();
+                }
+              }
+              await db.ref('users/' + uid).remove();
+              showMessage(`✅ User "${username}" deleted successfully.`, 'success');
+              loadUsers(); loadApplications();
+            } catch (err) { showMessage(`❌ Error deleting user: ${err.message}`, 'error'); }
+          });
+        });
+
+        // Promote handlers
+        userListContainer.querySelectorAll('.promote-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const uid = btn.dataset.uid;
+            const username = btn.dataset.username;
+            if (!confirm(`Make "${username}" an admin?\nThey will have full access to this panel.`)) return;
+            try {
+              await db.ref('users/' + uid).update({ role: 'admin' });
+              showMessage(`✅ "${username}" promoted to admin.`, 'success');
+              loadUsers();
+            } catch (err) { showMessage(`❌ Error promoting user: ${err.message}`, 'error'); }
+          });
+        });
+
+        // Reset Password handlers
+        userListContainer.querySelectorAll('.reset-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const email = btn.dataset.email;
+            const username = btn.dataset.username;
+            if (!confirm(`Send a password reset email to "${username}" (${email})?`)) return;
+            try {
+              await auth.sendPasswordResetEmail(email);
+              showMessage(`✅ Password reset email sent to ${email}.`, 'success');
+            } catch (err) { showMessage(`❌ Error sending reset email: ${err.message}`, 'error'); }
+          });
+        });
+
+      } catch (err) {
+        userListContainer.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading users: ${err.message}</p></div>`;
+      }
+    }
+
+    // ---------- Create Admin ----------
+    async function createNewAdmin() {
+      createAdminAlert.classList.add('hidden');
+      createAdminSuccess.classList.add('hidden');
+
+      const username = newAdminUsername.value.trim();
+      const email = newAdminEmail.value.trim();
+      const password = newAdminPassword.value;
+
+      if (!username || !email || !password) {
+        createAdminAlertMsg.textContent = 'Please fill in all three fields.';
+        createAdminAlert.classList.remove('hidden');
+        return;
+      }
+      if (!email.includes('@') || !email.includes('.')) {
+        createAdminAlertMsg.textContent = 'Please enter a valid email.';
+        createAdminAlert.classList.remove('hidden');
+        return;
+      }
+      if (password.length < 6) {
+        createAdminAlertMsg.textContent = 'Password must be at least 6 characters.';
+        createAdminAlert.classList.remove('hidden');
+        return;
+      }
+
+      createAdminBtn.disabled = true;
+      createAdminBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+      try {
+        let userCredential;
+        try {
+          userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        } catch (err) {
+          if (err.code === 'auth/email-already-in-use') {
+            // Try to sign in with the provided password to promote
+            try {
+              userCredential = await auth.signInWithEmailAndPassword(email, password);
+            } catch (signInErr) {
+              throw new Error('This email is already registered, but the password is incorrect. Use the correct password to promote it, or a different email.');
+            }
+          } else { throw err; }
+        }
+
+        const uid = userCredential.user.uid;
+        const userRef = db.ref('users/' + uid);
+        const snap = await userRef.once('value');
+        const existing = snap.val();
+
+        const data = { username, email, role: 'admin', updatedAt: Date.now() };
+        if (!existing) data.createdAt = Date.now();
+        await userRef.update(data);
+
+        // Clear form
+        newAdminUsername.value = '';
+        newAdminEmail.value = '';
+        newAdminPassword.value = '';
+
+        createAdminSuccessMsg.textContent = `✅ Admin "${username}" (${email}) created successfully. They can log in now.`;
+        createAdminSuccess.classList.remove('hidden');
+
+        // Refresh user list
+        loadUsers();
+
+        // Sign out the newly-created admin so it doesn't hijack the current admin session
+        // (Firebase replaces currentUser on createUserWithEmailAndPassword)
+        // We log them back in with the original admin's email? No — we just sign out.
+        // But the page's onAuthStateChanged would redirect. So we must sign out and re-auth with the existing admin.
+        // Better: sign out, then redirect to login.
+        // However that would log out the CURRENT admin too.
+        // Alternative: Firebase Auth does not allow creating a user without switching currentUser.
+        // So we sign out, and ask the current admin to re-login.
+        // We display a message.
+        setTimeout(async () => {
+          await auth.signOut();
+          alert('New admin created. You have been signed out because Firebase switches the current user when creating a new account. Please log in again with YOUR original admin credentials.');
+          window.location.href = 'index.html';
+        }, 2000);
+
+      } catch (err) {
+        let msg = err.message || 'Something went wrong.';
+        if (err.code === 'auth/weak-password') msg = 'Password too weak (min 6 chars).';
+        if (err.code === 'auth/invalid-email') msg = 'Invalid email.';
+        if (err.code === 'PERMISSION_DENIED') msg = 'Database permission denied. Check Firebase rules.';
+        createAdminAlertMsg.textContent = msg;
+        createAdminAlert.classList.remove('hidden');
+      } finally {
+        createAdminBtn.disabled = false;
+        createAdminBtn.innerHTML = '<i class="fas fa-plus"></i> Create';
+      }
+    }
+
+    createAdminBtn.addEventListener('click', createNewAdmin);
+    [newAdminUsername, newAdminEmail, newAdminPassword].forEach(el => {
+      el.addEventListener('keypress', e => { if (e.key === 'Enter') { e.preventDefault(); createNewAdmin(); } });
+    });
+
+    // ---------- Load Applications (unchanged) ----------
+    async function loadApplications() {
+      try {
+        const snapshot = await db.ref('applications').orderByChild('createdAt').once('value');
+        const applications = snapshot.val();
+        if (!applications) {
+          applicationListContainer.innerHTML = `<div class="empty-state"><i class="fas fa-inbox"></i><p>No applications submitted yet.</p></div>`;
+          totalApplications.textContent = '0';
+          pendingApplications.textContent = '0';
+          approvedApplications.textContent = '0';
+          appBadge.textContent = '0';
+          return;
+        }
+        const appArray = Object.entries(applications);
+        let pending = 0, approved = 0;
+        let html = `<table class="admin-table">
+          <thead><tr>
+            <th><i class="fas fa-user"></i> Applicant</th>
+            <th><i class="fas fa-envelope"></i> Email</th>
+            <th><i class="fas fa-tag"></i> Status</th>
+            <th><i class="fas fa-calendar"></i> Submitted</th>
+            <th><i class="fas fa-cog"></i> Actions</th>
+          </tr></thead><tbody>`;
+        for (const [key, app] of appArray) {
+          let username = 'Unknown User', userEmail = '';
+          if (app.userId) {
+            try {
+              const userSnap = await db.ref('users/' + app.userId).once('value');
+              const ud = userSnap.val();
+              if (ud) { username = ud.username || 'Unknown User'; userEmail = ud.email || ''; }
+            } catch (e) {}
+          }
+          const status = app.status || 'pending';
+          if (status === 'pending') pending++;
+          if (status === 'approved') approved++;
+          const createdDate = app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }) : 'N/A';
+          html += `<tr>
+            <td><strong>${username}</strong></td>
+            <td>${userEmail || '—'}</td>
+            <td><span class="badge badge-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></td>
+            <td>${createdDate}</td>
+            <td>
+              <button class="view-btn" data-key="${key}"><i class="fas fa-eye"></i> View</button>
+              <button class="delete-btn" data-key="${key}" data-username="${username}" style="margin-top:4px;"><i class="fas fa-trash-alt"></i> Delete</button>
+            </td>
+          </tr>`;
+        }
+        html += `</tbody></table>`;
+        applicationListContainer.innerHTML = html;
+        totalApplications.textContent = appArray.length;
+        pendingApplications.textContent = pending;
+        approvedApplications.textContent = approved;
+        appBadge.textContent = appArray.length;
+
+        applicationListContainer.querySelectorAll('.view-btn').forEach(btn => {
+          btn.addEventListener('click', () => viewApplication(btn.dataset.key));
+        });
+        applicationListContainer.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const key = btn.dataset.key, username = btn.dataset.username;
+            if (!confirm(`⚠️ Delete application from "${username}"?`)) return;
+            try {
+              await db.ref('applications/' + key).remove();
+              showMessage(`✅ Application from "${username}" deleted.`, 'success');
+              loadApplications();
+            } catch (err) { showMessage(`❌ Error: ${err.message}`, 'error'); }
+          });
+        });
+      } catch (err) {
+        applicationListContainer.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading applications: ${err.message}</p></div>`;
+      }
+    }
+
+    // ---------- View Application (unchanged) ----------
+    async function viewApplication(key) {
+      try {
+        const snapshot = await db.ref('applications/' + key).once('value');
+        const app = snapshot.val();
+        if (!app) { showMessage('Application not found.', 'error'); return; }
+        let username = 'Unknown User';
+        if (app.userId) {
+          try {
+            const us = await db.ref('users/' + app.userId).once('value');
+            const ud = us.val();
+            if (ud) username = ud.username || 'Unknown User';
+          } catch (e) {}
+        }
+        detailApplicant.textContent = `Applicant: ${username}`;
+        const status = app.status || 'pending';
+        let html = `
+          <div class="detail-section">
+            <div class="section-title"><i class="fas fa-user"></i> Personal Information</div>
+            <div class="detail-row"><span class="label">Full Name</span><span class="value">${app.firstName || ''} ${app.middleName || ''} ${app.lastName || ''}</span></div>
+            <div class="detail-row"><span class="label">Age</span><span class="value">${app.age || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">Sex</span><span class="value">${app.sex || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">Address</span><span class="value">${app.address || ''}, ${app.city || ''}, ${app.province || ''}, ${app.country || ''}</span></div>
+            <div class="detail-row"><span class="label">Contact</span><span class="value">${app.contactNumber || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">Facebook</span><span class="value"><a href="${app.facebookLink || '#'}" target="_blank">${app.facebookLink || 'N/A'}</a></span></div>
+          </div>
+          <div class="detail-section">
+            <div class="section-title"><i class="fas fa-briefcase"></i> Skills & Experience</div>
+            <div class="detail-row"><span class="label">Portfolio</span><span class="value"><a href="${app.portfolioLink || '#'}" target="_blank">${app.portfolioLink || 'N/A'}</a></span></div>
+            <div class="detail-row"><span class="label">Tools</span><span class="value">${app.tools || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">Platforms</span><span class="value">${app.platforms || 'N/A'}</span></div>
+            <div class="detail-row"><span class="label">Strengths</span><span class="value">${app.strengths || 'N/A'}</span></div>
+          </div>
+          <div class="detail-section">
+            <div class="section-title"><i class="fas fa-video"></i> Sample Test</div>
+            <div class="detail-row"><span class="label">Sample Reel</span><span class="value"><a href="${app.sampleLink || '#'}" target="_blank">${app.sampleLink || 'N/A'}</a></span></div>
+            <div class="detail-row"><span class="label">Terms Accepted</span><span class="value">${app.termsAccepted ? '✅ Yes' : '❌ No'}</span></div>
+            <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge badge-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></span></div>
+          </div>
+          <div class="detail-section">
+            <div class="section-title"><i class="fas fa-cog"></i> Update Status</div>
+            <div class="status-actions">
+              <button class="btn btn-success btn-sm" onclick="updateStatus('${key}', 'approved')"><i class="fas fa-check"></i> Approve</button>
+              <button class="btn btn-warning btn-sm" onclick="updateStatus('${key}', 'pending')"><i class="fas fa-clock"></i> Set Pending</button>
+              <button class="btn btn-danger btn-sm" onclick="updateStatus('${key}', 'rejected')"><i class="fas fa-times"></i> Reject</button>
+            </div>
+          </div>`;
+        detailContent.innerHTML = html;
+        detailModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      } catch (err) {
+        showMessage(`Error loading application: ${err.message}`, 'error');
+      }
+    }
+
+    async function updateStatus(key, newStatus) {
+      try {
+        await db.ref('applications/' + key).update({ status: newStatus });
+        showMessage(`✅ Application status updated to ${newStatus}.`, 'success');
+        detailModal.classList.remove('active');
+        document.body.style.overflow = '';
+        loadApplications();
+      } catch (err) {
+        showMessage(`❌ Error updating status: ${err.message}`, 'error');
+      }
+    }
+    window.updateStatus = updateStatus;
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+      });
+    });
+
+    // Modal controls
+    closeDetailModal.addEventListener('click', () => { detailModal.classList.remove('active'); document.body.style.overflow = ''; });
+    detailModal.addEventListener('click', e => { if (e.target === detailModal) { detailModal.classList.remove('active'); document.body.style.overflow = ''; } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && detailModal.classList.contains('active')) { detailModal.classList.remove('active'); document.body.style.overflow = ''; } });
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => { auth.signOut(); window.location.href = 'index.html'; });
+    document.getElementById('goToUserDashboard').addEventListener('click', () => { window.location.href = 'user.html'; });
+
+    // Auth listener
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) { window.location.href = 'index.html'; return; }
+      try {
+        const snap = await db.ref('users/' + user.uid).once('value');
+        const data = snap.val();
+        if (!data || data.role !== 'admin') { window.location.href = 'user.html'; return; }
+        loadUsers();
+        loadApplications();
+      } catch (err) {
+        console.error('Error verifying admin role:', err);
+        window.location.href = 'user.html';
+      }
+    });
+
+    console.log('🚀 Admin Panel loaded — create admins, promote users, reset passwords');
+  </script>
+</body>
+</html>

@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jobhunt · Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav {
+            background: white;
+            padding: 16px 32px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .nav-brand i {
+            color: #667eea;
+            font-size: 28px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .nav-btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-btn-primary:hover {
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .nav-btn-outline {
+            background: transparent;
+            color: #1a1a2e;
+            border: 2px solid #e2e8f0;
+        }
+
+        .nav-btn-outline:hover {
+            background: #f8fafc;
+        }
+
+        .nav-btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .nav-btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .nav-badge {
+            background: #fce4ec;
+            color: #b71c1c;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Main Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: #667eea;
+        }
+
+        .card-title .count-badge {
+            background: #667eea;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* Profile Card */
+        .profile-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            margin: 0 auto 12px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .profile-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .profile-email {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .profile-role {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #dbeafe;
+            color: #1e40af;
+            text-transform: capitalize;
+        }
+
+        .profile-details {
+            margin-top: 16px;
+        }
+
+        .profile-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.9rem;
+        }
+
+        .profile-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .profile-detail-item .label {
+            color: #6b7280;
+        }
+
+        .profile-detail-item .value {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .profile-detail-item .value.success {
+            color: #22c55e;
+        }
+
+        .profile-detail-item .value.warning {
+            color: #f59e0b;
+        }
+
+        /* Job Application Button */
+        .apply-btn-container {
+            margin-top: 20px;
+        }
+
+        .btn-apply {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .btn-apply:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-apply i {
+            font-size: 20px;
+        }
+
+        /* Posts/Applications Feed */
+        .post {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .post:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .post-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .post-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .post-user-info .name {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .post-user-info .time {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .post-status {
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .post-content {
+            color: #1a1a2e;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .post-content .section {
+            margin: 12px 0;
+        }
+
+        .post-content .section-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 4px;
+        }
+
+        .post-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .post-content ul li {
+            padding: 4px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .post-content ul li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+
+        .post-content .links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .post-content .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .post-content .links a:hover {
+            text-decoration: underline;
+        }
+
+        .post-footer {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 16px;
+        }
+
+        .post-footer button {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .post-footer button:hover {
+            color: #667eea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #d1d5db;
+            margin-bottom: 16px;
+        }
+
+        .empty-state .btn-secondary {
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .empty-state .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal {
+            background: white;
+            max-width: 750px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.4s ease-out;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #f1f5f9;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1a2e;
+        }
+
+        .modal-close:hover {
+            background: #e2e8f0;
+            transform: rotate(90deg);
+        }
+
+        .modal h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .modal .subtitle {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+        }
+
+        .materials-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 16px 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            border: 2px solid #93c5fd;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .materials-box i {
+            font-size: 28px;
+            color: #2563eb;
+        }
+
+        .materials-box .content {
+            flex: 1;
+        }
+
+        .materials-box .content strong {
+            display: block;
+            color: #1e3a8a;
+            font-size: 0.95rem;
+        }
+
+        .materials-box .content a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .materials-box .content a:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+
+        .form-group label .required {
+            color: #ef4444;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group .helper-text {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 480px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            margin: 12px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            accent-color: #667eea;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 0.9rem;
+            color: #1a1a2e;
+            cursor: pointer;
+        }
+
+        .checkbox-group label strong {
+            color: #667eea;
+        }
+
+        .form-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+            margin-top: 8px;
+        }
+
+        .form-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .form-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 14px 18px;
+            border-radius: 14px;
+            margin: 16px 0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            color: #166534;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-admin {
+            background: #fce4ec;
+            color: #b71c1c;
+        }
+
+        .badge-user {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #94a3b8;
+        }
+
+        .loading i {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        /* Scrollbar */
+        .modal::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .modal::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .modal::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 16px;
+            }
+            .nav-brand {
+                font-size: 18px;
+            }
+            .card {
+                padding: 20px;
+            }
+            .modal {
+                padding: 24px;
+                margin: 10px;
+            }
+            .dashboard-grid {
+                gap: 16px;
+            }
+            .materials-box {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav class="nav">
+            <div class="nav-brand">
+                <i class="fas fa-bolt"></i>
+                <span>Jobhunt</span>
+                <span class="nav-badge" id="userRoleBadge">User</span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-btn nav-btn-primary" id="applyJobBtn">
+                    <i class="fas fa-paper-plane"></i> Apply Now
+                </button>
+                <button class="nav-btn nav-btn-outline" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="nav-btn nav-btn-danger" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Log Out
+                </button>
+            </div>
+        </nav>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Left: Profile -->
+            <div class="card">
+                <div class="profile-header">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="profile-name" id="profileName">Loading...</div>
+                    <div class="profile-email" id="profileEmail">Loading...</div>
+                    <span class="profile-role" id="profileRole">User</span>
+                </div>
+                <div class="profile-details">
+                    <div class="profile-detail-item">
+                        <span class="label"><i class="fas fa-calendar-alt"></i> Joined</span>
+                        <span class="value" id="profileJoined">-</span>
+                    </div>
+                    <div class="profile-detail-item">
+                        <span class="label"><i class="fas fa-clipboard-check"></i> Applications</span>
+                        <span class="value" id="profileApplications">0</span>
+                    </div>
+                    <div class="profile-detail-item">
+                        <span class="label"><i class="fas fa-user-check"></i> Status</span>
+                        <span class="value" id="profileStatus">Active</span>
+                    </div>
+                </div>
+                <div class="apply-btn-container">
+                    <button class="btn-apply" id="applyJobBtn2">
+                        <i class="fas fa-rocket"></i> Apply for Job
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Feed -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-rss"></i> My Applications
+                    <span class="count-badge" id="appCount">0</span>
+                </div>
+                <div id="feedContainer">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading your applications...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Modal -->
+    <div class="modal-overlay" id="applicationModal">
+        <div class="modal">
+            <button class="modal-close" id="closeModal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-file-signature" style="color: #667eea;"></i> Job Application</h2>
+            <p class="subtitle">Video Editor & Social Media Graphics Position</p>
+
+            <!-- Materials Box -->
+            <div class="materials-box">
+                <i class="fas fa-folder-open"></i>
+                <div class="content">
+                    <strong>📁 Materials for Sample Test</strong>
+                    <p style="font-size: 0.9rem; color: #1e3a8a; margin: 4px 0;">
+                        Please use the materials from this folder for your sample test:
+                    </p>
+                    <a href="https://drive.google.com/drive/folders/18XImwk-5jZU092Qv4iFzTdF3-gPOPmHD?usp=sharing" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> 
+                        https://drive.google.com/drive/folders/18XImwk-5jZU092Qv4iFzTdF3-gPOPmHD?usp=sharing
+                    </a>
+                </div>
+            </div>
+
+            <div id="modalAlert" class="alert hidden"></div>
+
+            <form id="applicationForm">
+                <!-- Personal Information -->
+                <h3 style="margin: 16px 0 12px; color: #1a1a2e; font-size: 16px;">
+                    <i class="fas fa-user-circle" style="color: #667eea;"></i> Personal Information
+                </h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name <span class="required">*</span></label>
+                        <input type="text" id="firstName" placeholder="Enter first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Middle Name</label>
+                        <input type="text" id="middleName" placeholder="Enter middle name">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Last Name <span class="required">*</span></label>
+                        <input type="text" id="lastName" placeholder="Enter last name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Age <span class="required">*</span></label>
+                        <input type="number" id="age" placeholder="Enter age" min="18" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Sex <span class="required">*</span></label>
+                    <select id="sex" required>
+                        <option value="">Select sex</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Address <span class="required">*</span></label>
+                        <input type="text" id="address" placeholder="Street address" required>
+                    </div>
+                    <div class="form-group">
+                        <label>City <span class="required">*</span></label>
+                        <input type="text" id="city" placeholder="City" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Province <span class="required">*</span></label>
+                        <input type="text" id="province" placeholder="Province/State" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Country <span class="required">*</span></label>
+                        <select id="country" required>
+                            <option value="">Select country</option>
+                            <option value="Philippines">Philippines</option>
+                            <option value="United States">United States</option>
+                            <option value="Canada">Canada</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Contact Number <span class="required">*</span></label>
+                    <input type="tel" id="contactNumber" placeholder="+63 912 345 6789" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Facebook Account Link <span class="required">*</span></label>
+                    <input type="url" id="facebookLink" placeholder="https://www.facebook.com/yourprofile" required>
+                </div>
+
+                <!-- Terms -->
+                <div class="checkbox-group">
+                    <input type="checkbox" id="termsCheckbox" required>
+                    <label for="termsCheckbox">
+                        I agree to the <strong>Terms of Service</strong> and <strong>Privacy Policy</strong>. I understand that my information will be shared with the hiring team for evaluation purposes only.
+                    </label>
+                </div>
+
+                <!-- Job Details -->
+                <h3 style="margin: 24px 0 12px; color: #1a1a2e; font-size: 16px;">
+                    <i class="fas fa-briefcase" style="color: #667eea;"></i> Job Application Details
+                </h3>
+
+                <div class="form-group">
+                    <label>Portfolio Link <span class="required">*</span></label>
+                    <input type="url" id="portfolioLink" placeholder="https://yourportfolio.com" required>
+                    <span class="helper-text">Please include 3-5 examples of your work</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Tools You Use <span class="required">*</span></label>
+                    <input type="text" id="tools" placeholder="Photoshop, Premiere Pro, After Effects, CapCut, Canva, etc." required>
+                    <span class="helper-text">List all the software you're proficient with</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Platform Comfort <span class="required">*</span></label>
+                    <input type="text" id="platforms" placeholder="YouTube, Instagram, Facebook, TikTok, Google Business Profile" required>
+                    <span class="helper-text">Confirm you're comfortable creating and posting on these platforms</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Your Strengths <span class="required">*</span></label>
+                    <textarea id="strengths" placeholder="Video editing, Color grading, Graphic design, Branding, Social media content planning..." required></textarea>
+                    <span class="helper-text">Tell us where you are strongest</span>
+                </div>
+
+                <!-- Sample Test -->
+                <h3 style="margin: 24px 0 12px; color: #1a1a2e; font-size: 16px;">
+                    <i class="fas fa-video" style="color: #667eea;"></i> Sample Test
+                </h3>
+
+                <div style="background: #f8fafc; padding: 16px; border-radius: 12px; margin-bottom: 16px; border-left: 4px solid #667eea;">
+                    <p style="font-size: 0.9rem; color: #1a1a2e; line-height: 1.6;">
+                        <strong>Task:</strong> Create a 25-30 second vertical Reel for Facebook/Instagram.<br>
+                        Include nail work, happy clients, social-proof, pedicure footage, sanitization, and staff service.<br>
+                        Music should be engaging and elegant. Color grading should be natural, warm, and premium.<br>
+                        <span style="color: #667eea; font-weight: 500;">
+                            <i class="fas fa-folder-open"></i> Use the materials from the folder above.
+                        </span>
+                    </p>
+                </div>
+
+                <div class="form-group">
+                    <label>Google Drive Link (Sample Reel) <span class="required">*</span></label>
+                    <input type="url" id="sampleLink" placeholder="https://drive.google.com/..." required>
+                    <span class="helper-text">Upload your 25-30 second sample Reel and share the link</span>
+                </div>
+
+                <button type="submit" class="form-submit" id="submitApplication">
+                    <i class="fas fa-paper-plane"></i> Submit Application
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBBZ790BhNj8pBSXKlwii_zsQPLXfrxP18",
+            authDomain: "viralapp-efe85.firebaseapp.com",
+            databaseURL: "https://viralapp-efe85-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "viralapp-efe85",
+            storageBucket: "viralapp-efe85.firebasestorage.app",
+            messagingSenderId: "460656575488",
+            appId: "1:460656575488:web:19d7d0c28e9c86651444e5"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // DOM Elements
+        const feedContainer = document.getElementById('feedContainer');
+        const applicationModal = document.getElementById('applicationModal');
+        const closeModal = document.getElementById('closeModal');
+        const applyJobBtn = document.getElementById('applyJobBtn');
+        const applyJobBtn2 = document.getElementById('applyJobBtn2');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const applicationForm = document.getElementById('applicationForm');
+        const modalAlert = document.getElementById('modalAlert');
+        const submitBtn = document.getElementById('submitApplication');
+        const appCount = document.getElementById('appCount');
+
+        // Profile Elements
+        const profileName = document.getElementById('profileName');
+        const profileEmail = document.getElementById('profileEmail');
+        const profileRole = document.getElementById('profileRole');
+        const profileJoined = document.getElementById('profileJoined');
+        const profileApplications = document.getElementById('profileApplications');
+        const profileStatus = document.getElementById('profileStatus');
+        const userRoleBadge = document.getElementById('userRoleBadge');
+
+        // State
+        let currentUser = null;
+        let userData = null;
+
+        // Show alert in modal
+        function showModalAlert(message, type = 'success') {
+            modalAlert.className = `alert alert-${type}`;
+            modalAlert.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            modalAlert.classList.remove('hidden');
+            setTimeout(() => {
+                modalAlert.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Load ONLY the current user's applications
+        async function loadUserFeed() {
+            if (!currentUser) return;
+
+            try {
+                const snapshot = await db.ref('applications')
+                    .orderByChild('userId')
+                    .equalTo(currentUser.uid)
+                    .once('value');
+
+                const applications = snapshot.val();
+
+                // Update count
+                const count = applications ? Object.keys(applications).length : 0;
+                appCount.textContent = count;
+                profileApplications.textContent = count;
+
+                if (!applications) {
+                    feedContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>You haven't submitted any applications yet.</p>
+                            <p style="margin-top: 8px; font-size: 0.9rem;">Click the "Apply Now" button to get started!</p>
+                            <button class="btn-secondary" onclick="document.getElementById('applyJobBtn').click()">
+                                <i class="fas fa-paper-plane"></i> Apply Now
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                const appArray = Object.entries(applications).reverse();
+
+                for (const [key, app] of appArray) {
+                    const username = userData?.username || 'You';
+                    const status = app.status || 'pending';
+                    const statusClass = `status-${status}`;
+                    const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+
+                    const createdDate = app.createdAt ? new Date(app.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    }) : 'Recently';
+
+                    const initial = username.charAt(0).toUpperCase();
+
+                    html += `
+                        <div class="post">
+                            <div class="post-header">
+                                <div class="post-user">
+                                    <div class="post-avatar">${initial}</div>
+                                    <div class="post-user-info">
+                                        <div class="name">${username}</div>
+                                        <div class="time"><i class="far fa-clock"></i> ${createdDate}</div>
+                                    </div>
+                                </div>
+                                <span class="post-status ${statusClass}">${statusLabel}</span>
+                            </div>
+                            <div class="post-content">
+                                <div class="section">
+                                    <div class="section-title"><i class="fas fa-user"></i> Personal Info</div>
+                                    <p><strong>${app.firstName || ''} ${app.middleName || ''} ${app.lastName || ''}</strong></p>
+                                    <p>${app.age || ''} years old · ${app.sex || ''}</p>
+                                    <p>${app.address || ''}, ${app.city || ''}, ${app.province || ''}, ${app.country || ''}</p>
+                                    <p><i class="fas fa-phone"></i> ${app.contactNumber || ''}</p>
+                                    <p><i class="fab fa-facebook"></i> <a href="${app.facebookLink || '#'}" target="_blank">Facebook Profile</a></p>
+                                </div>
+
+                                <div class="section">
+                                    <div class="section-title"><i class="fas fa-briefcase"></i> Skills & Experience</div>
+                                    <p><strong>Portfolio:</strong> <a href="${app.portfolioLink || '#'}" target="_blank">${app.portfolioLink || 'N/A'}</a></p>
+                                    <p><strong>Tools:</strong> ${app.tools || 'N/A'}</p>
+                                    <p><strong>Platforms:</strong> ${app.platforms || 'N/A'}</p>
+                                    <p><strong>Strengths:</strong> ${app.strengths || 'N/A'}</p>
+                                </div>
+
+                                <div class="section">
+                                    <div class="section-title"><i class="fas fa-video"></i> Sample Test</div>
+                                    <p><strong>Sample Reel:</strong> <a href="${app.sampleLink || '#'}" target="_blank">${app.sampleLink || 'N/A'}</a></p>
+                                </div>
+
+                                ${app.termsAccepted ? `<div style="margin-top:8px; color:#22c55e;"><i class="fas fa-check-circle"></i> Terms accepted</div>` : ''}
+                            </div>
+                            <div class="post-footer">
+                                <button><i class="far fa-heart"></i> Like</button>
+                                <button><i class="far fa-comment"></i> Comment</button>
+                                <button><i class="far fa-share-square"></i> Share</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                feedContainer.innerHTML = html;
+
+            } catch (err) {
+                console.error('Error loading feed:', err);
+                feedContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error loading applications: ${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load user profile
+        async function loadProfile(user) {
+            try {
+                const snapshot = await db.ref('users/' + user.uid).once('value');
+                const data = snapshot.val();
+                userData = data;
+
+                if (data) {
+                    profileName.textContent = data.username || 'User';
+                    profileEmail.textContent = data.email || '';
+                    profileRole.textContent = data.role || 'user';
+                    userRoleBadge.textContent = data.role === 'admin' ? 'Admin' : 'User';
+
+                    if (data.createdAt) {
+                        const date = new Date(data.createdAt);
+                        profileJoined.textContent = date.toLocaleDateString('en-US', {
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric'
+                        });
+                    }
+
+                    // Count applications
+                    const appSnapshot = await db.ref('applications').orderByChild('userId').equalTo(user.uid).once('value');
+                    const apps = appSnapshot.val();
+                    const count = apps ? Object.keys(apps).length : 0;
+                    profileApplications.textContent = count;
+
+                    if (count > 0) {
+                        profileStatus.textContent = 'Applied';
+                        profileStatus.style.color = '#22c55e';
+                    } else {
+                        profileStatus.textContent = 'Not Applied';
+                        profileStatus.style.color = '#6b7280';
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading profile:', err);
+            }
+        }
+
+        // Submit application
+        async function submitApplication(e) {
+            e.preventDefault();
+
+            const formData = {
+                userId: currentUser.uid,
+                firstName: document.getElementById('firstName').value.trim(),
+                middleName: document.getElementById('middleName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                age: document.getElementById('age').value,
+                sex: document.getElementById('sex').value,
+                address: document.getElementById('address').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                province: document.getElementById('province').value.trim(),
+                country: document.getElementById('country').value,
+                contactNumber: document.getElementById('contactNumber').value.trim(),
+                facebookLink: document.getElementById('facebookLink').value.trim(),
+                portfolioLink: document.getElementById('portfolioLink').value.trim(),
+                tools: document.getElementById('tools').value.trim(),
+                platforms: document.getElementById('platforms').value.trim(),
+                strengths: document.getElementById('strengths').value.trim(),
+                sampleLink: document.getElementById('sampleLink').value.trim(),
+                termsAccepted: document.getElementById('termsCheckbox').checked,
+                status: 'pending',
+                createdAt: Date.now()
+            };
+
+            // Validate
+            for (const [key, value] of Object.entries(formData)) {
+                if (key === 'middleName' || key === 'termsAccepted' || key === 'userId' || key === 'status' || key ===
+                    'createdAt') continue;
+                if (!value || value === '') {
+                    showModalAlert(`Please fill in all required fields.`, 'error');
+                    return;
+                }
+            }
+
+            if (!formData.termsAccepted) {
+                showModalAlert('Please accept the Terms of Service and Privacy Policy.', 'error');
+                return;
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+                await db.ref('applications').push(formData);
+
+                showModalAlert('✅ Application submitted successfully!', 'success');
+
+                setTimeout(() => {
+                    applicationModal.classList.remove('active');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application';
+                    applicationForm.reset();
+                    loadUserFeed();
+                    loadProfile(currentUser);
+                }, 2000);
+
+            } catch (err) {
+                showModalAlert(`Error: ${err.message}`, 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application';
+            }
+        }
+
+        // Modal controls
+        function openModal() {
+            if (!currentUser) {
+                alert('Please log in to apply.');
+                return;
+            }
+            applicationModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModalFunc() {
+            applicationModal.classList.remove('active');
+            document.body.style.overflow = '';
+            modalAlert.classList.add('hidden');
+            applicationForm.reset();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Application';
+        }
+
+        // Event Listeners
+        applyJobBtn.addEventListener('click', openModal);
+        applyJobBtn2.addEventListener('click', openModal);
+        closeModal.addEventListener('click', closeModalFunc);
+        applicationModal.addEventListener('click', (e) => {
+            if (e.target === applicationModal) closeModalFunc();
+        });
+
+        applicationForm.addEventListener('submit', submitApplication);
+
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+            window.location.href = 'index.html';
+        });
+
+        refreshBtn.addEventListener('click', () => {
+            loadUserFeed();
+            if (currentUser) loadProfile(currentUser);
+        });
+
+        // Auth listener
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            currentUser = user;
+
+            // Check if admin
+            try {
+                const snapshot = await db.ref('users/' + user.uid).once('value');
+                const data = snapshot.val();
+                if (data?.role === 'admin') {
+                    const navLinks = document.querySelector('.nav-links');
+                    if (!document.getElementById('adminBtn')) {
+                        const adminBtn = document.createElement('button');
+                        adminBtn.id = 'adminBtn';
+                        adminBtn.className = 'nav-btn nav-btn-primary';
+                        adminBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Admin Panel';
+                        adminBtn.onclick = () => window.location.href = 'admin.html';
+                        navLinks.insertBefore(adminBtn, navLinks.firstChild);
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking role:', err);
+            }
+
+            // Load data
+            await loadProfile(user);
+            await loadUserFeed();
+        });
+
+        // Auto-close modal on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && applicationModal.classList.contains('active')) {
+                closeModalFunc();
+            }
+        });
+
+        console.log('🚀 ViralApp Dashboard loaded');
+        console.log('📁 Materials folder: https://drive.google.com/drive/folders/18XImwk-5jZU092Qv4iFzTdF3-gPOPmHD?usp=sharing');
+    </script>
+</body>
+</html>
